@@ -1,16 +1,19 @@
 package data
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"time"
 )
 
-type Puller struct{}
+func PullAll() {
+	for _, s := range sources {
+		PullSource(*s)
+	}
+}
 
-func (p Puller) Pull(s Source) ([]*Headline, error) {
+func PullSource(s Source) ([]*Headline, error) {
 	start := time.Now()
 
 	req, err := http.NewRequest("GET", s.URL, nil)
@@ -28,26 +31,18 @@ func (p Puller) Pull(s Source) ([]*Headline, error) {
 
 	defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
+	raw, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	type t struct {
-		Result struct {
-			Videos []map[string]interface{} `json:"videos"`
-		} `json:"result"`
-	}
-
-	js := t{}
-
-	err = json.Unmarshal(body, &js)
+	headlines, err := s.Parser.ParseBytes(raw)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, v := range js.Result.Videos {
-		fmt.Printf("%v\n", v["title"])
+	for _, h := range headlines {
+		fmt.Printf("%s\n%s\n%s\n\n", h.Title, h.Date.UTC(), h.Subtitle)
 	}
 
 	duration := time.Since(start)

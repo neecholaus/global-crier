@@ -6,6 +6,11 @@ type Source struct {
 	Publication string
 	Name        string
 	URL         string
+	Parser      parser
+}
+
+type parser interface {
+	ParseBytes(s []byte) ([]*Headline, error)
 }
 
 type Headline struct {
