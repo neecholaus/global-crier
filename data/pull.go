@@ -9,13 +9,18 @@ import (
 
 func PullAll() {
 	for _, s := range sources {
-		PullSource(*s)
+		start := time.Now()
+		headlines, err := PullSource(*s)
+		if err != nil {
+			fmt.Printf("ERR (%s - %s) pull failed (%s)\n", s.Publication, s.Name, err)
+			continue
+		}
+		duration := time.Since(start)
+		fmt.Printf("(%s - %s) pull took (%.1f) seconds to pull (%d) headlines\n", s.Publication, s.Name, duration.Seconds(), len(headlines))
 	}
 }
 
 func PullSource(s Source) ([]*Headline, error) {
-	start := time.Now()
-
 	req, err := http.NewRequest("GET", s.URL, nil)
 	if err != nil {
 		return nil, err
@@ -41,11 +46,5 @@ func PullSource(s Source) ([]*Headline, error) {
 		return nil, err
 	}
 
-	for _, h := range headlines {
-		fmt.Printf("%s\n%s\n%s\n\n", h.Title, h.Date.UTC(), h.Subtitle)
-	}
-
-	duration := time.Since(start)
-	fmt.Printf("(%s) pull took (%.1f) seconds\n", s.Name, duration.Seconds())
-	return nil, nil
+	return headlines, nil
 }
