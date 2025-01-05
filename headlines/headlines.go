@@ -17,6 +17,6 @@ type Headline struct {
 	Title    string
 	Subtitle string
 	URL      string
-	Date     time.Time
+	PulledAt time.Time
 	Keywords *[]string
 }

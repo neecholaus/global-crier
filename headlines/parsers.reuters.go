@@ -28,7 +28,7 @@ func (t reutersVideoParser) ParseBytes(s []byte) ([]*Headline, error) {
 			Title:    v["title"].(string),
 			Subtitle: v["description"].(string),
 			// URL:      v["url"].(string),
-			Date: time.Now(),
+			PulledAt: time.Now(),
 		})
 	}
 
@@ -58,7 +58,7 @@ func (t reutersBigStoryParser) ParseBytes(s []byte) ([]*Headline, error) {
 			Title:    v["title"].(string),
 			Subtitle: v["description"].(string),
 			// URL:      v["url"].(string),
-			Date: time.Now().UTC(),
+			PulledAt: time.Now().UTC(),
 		})
 	}
 

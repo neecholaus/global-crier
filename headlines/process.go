@@ -2,6 +2,7 @@ package headlines
 
 import (
 	"fmt"
+	"nick/global-crier/bootstrap"
 	"regexp"
 	"slices"
 	"strings"
@@ -13,8 +14,22 @@ func ProcessHeadlines(headlines []*Headline) {
 
 	for _, h := range headlines {
 		ExtractKeywords(h)
+	}
 
-		fmt.Printf("%s\n%s\n\n", h.Title, *h.Keywords)
+	prepared := []bootstrap.Headline{}
+	for _, h := range headlines {
+		prepared = append(prepared, bootstrap.Headline{
+			Title:       h.Title,
+			Description: h.Subtitle,
+			URL:         h.URL,
+			PulledAt:    h.PulledAt,
+			Keywords:    h.Keywords,
+		})
+	}
+
+	res := bootstrap.Db.Create(&prepared)
+	if res.Error != nil {
+		panic(res.Error)
 	}
 
 	duration := time.Since(start)
