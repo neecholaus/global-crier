@@ -1,4 +1,4 @@
-package data
+package headlines
 
 type Publication string
 

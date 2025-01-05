@@ -1,9 +1,7 @@
 package main
 
-import (
-	"nick/global-crier/data"
-)
+import "nick/global-crier/headlines"
 
 func main() {
-	data.PullAll()
+	headlines.Test()
 }

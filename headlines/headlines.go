@@ -1,4 +1,4 @@
-package data
+package headlines
 
 import "time"
 
@@ -18,4 +18,5 @@ type Headline struct {
 	Subtitle string
 	URL      string
 	Date     time.Time
+	Keywords *[]string
 }
