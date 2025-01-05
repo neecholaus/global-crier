@@ -1,29 +1,11 @@
 package headlines
 
 import (
-	"fmt"
 	"io"
 	"net/http"
-	"time"
 )
 
 var pullClient = &http.Client{}
-
-// tmp function
-func Test() {
-	for _, s := range sources {
-		start := time.Now()
-		headlines, err := GetHeadlinesFromSource(*s)
-		if err != nil {
-			fmt.Printf("ERR (%s - %s) pull failed (%s)\n", s.Publication, s.Name, err)
-			continue
-		}
-		duration := time.Since(start)
-		fmt.Printf("(%s - %s) pull took (%.1f) seconds to pull (%d) headlines\n", s.Publication, s.Name, duration.Seconds(), len(headlines))
-
-		ProcessHeadlines(headlines)
-	}
-}
 
 func GetHeadlinesFromSource(s Source) ([]*Headline, error) {
 	req, err := http.NewRequest("GET", s.URL, nil)

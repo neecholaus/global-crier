@@ -6,7 +6,7 @@ const (
 	Reuters Publication = "Reuters"
 )
 
-var sources = []*Source{
+var Sources = []*Source{
 	{
 		Publication: string(Reuters),
 		Name:        "Video List",
