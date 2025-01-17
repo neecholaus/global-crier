@@ -16,7 +16,7 @@ func ProcessHeadlines(headlines []*Headline) {
 	successCount := 0
 
 	for _, h := range headlines {
-		ExtractKeywordsFromTitle(h)
+		extractKeywordsFromTitle(h)
 
 		// existence check
 		res := bootstrap.Db.
@@ -30,28 +30,17 @@ func ProcessHeadlines(headlines []*Headline) {
 			continue
 		}
 
-		// create
-		prepared := bootstrap.Headline{
-			Title:       h.Title,
-			Description: h.Subtitle,
-			URL:         h.URL,
-			PulledAt:    h.PulledAt,
-			Keywords:    h.Keywords,
+		err := storeNewHeadline(h)
+		if err == nil {
+			successCount++
 		}
-
-		res = bootstrap.Db.Create(&prepared)
-		if res.Error != nil {
-			fmt.Printf("ERR failed storing headline")
-			continue
-		}
-		successCount++
 	}
 
 	duration := time.Since(start)
-	fmt.Printf("GOOD (%d) stored, (%d) duplicates, (%d) total, (%.1f) seconds\n", successCount, existingCount, len(headlines), duration.Seconds())
+	fmt.Printf("(%d) new, (%d) existing, (%d) total, (%.1f) seconds\n", successCount, existingCount, len(headlines), duration.Seconds())
 }
 
-func ExtractKeywordsFromTitle(headline *Headline) {
+func extractKeywordsFromTitle(headline *Headline) {
 	keywords := []string{}
 
 	exp := regexp.MustCompile(`[^a-zA-Z0-9\s\-]+`)
@@ -70,4 +59,22 @@ func ExtractKeywordsFromTitle(headline *Headline) {
 	}
 
 	headline.Keywords = &keywords
+}
+
+func storeNewHeadline(headline *Headline) error {
+	prepared := bootstrap.Headline{
+		Title:       headline.Title,
+		Description: headline.Subtitle,
+		URL:         headline.URL,
+		PulledAt:    headline.PulledAt,
+		Keywords:    headline.Keywords,
+	}
+
+	res := bootstrap.Db.Create(&prepared)
+	if res.Error != nil {
+		fmt.Printf("ERR failed storing headline")
+		return res.Error
+	}
+
+	return nil
 }
