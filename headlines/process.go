@@ -42,7 +42,7 @@ func ProcessHeadlines(tmpHeadlines []*TmpHeadline) {
 	}
 
 	for _, h := range headlines {
-		createKeywordStreamRelations(h, []time.Time{time.Now(), time.Now().AddDate(0, 0, -1)})
+		createKeywordStreamRelations(h)
 	}
 
 	duration := time.Since(start)
@@ -67,7 +67,7 @@ func extractKeywordsFromTitle(headline *TmpHeadline) {
 		}
 	}
 
-	headline.Keywords = &keywords
+	headline.Keywords = keywords
 }
 
 func storeHeadline(tmpHeadline *TmpHeadline) (*bootstrap.Headline, error) {
@@ -77,6 +77,7 @@ func storeHeadline(tmpHeadline *TmpHeadline) (*bootstrap.Headline, error) {
 		Description: tmpHeadline.Subtitle,
 		URL:         tmpHeadline.URL,
 		PulledAt:    tmpHeadline.PulledAt,
+		Keywords:    tmpHeadline.Keywords,
 	}
 	res := bootstrap.Db.Create(&prepared)
 	if res.Error != nil {
@@ -86,7 +87,7 @@ func storeHeadline(tmpHeadline *TmpHeadline) (*bootstrap.Headline, error) {
 
 	// create keyword records
 	var keywords []*bootstrap.Keyword
-	for _, kw := range *tmpHeadline.Keywords {
+	for _, kw := range tmpHeadline.Keywords {
 		keywords = append(keywords, &bootstrap.Keyword{
 			HeadlineID: prepared.ID,
 			Keyword:    kw,
@@ -101,6 +102,28 @@ func storeHeadline(tmpHeadline *TmpHeadline) (*bootstrap.Headline, error) {
 	return prepared, nil
 }
 
-func createKeywordStreamRelations(h *bootstrap.Headline, days []time.Time) {
-	// pull all keywords on days and determine all headlines that match
+func createKeywordStreamRelations(h *bootstrap.Headline) {
+	var keywordMatches []*bootstrap.Keyword
+	res := bootstrap.Db.
+		Where("keyword in ?", h.Keywords).
+		Where("headline_id != ?", h.ID).
+		Find(&keywordMatches)
+	if res.Error != nil {
+		fmt.Printf("failed pulling keywords (%s)\n", res.Error)
+	}
+
+	// todo query the correct days
+
+	dict := make(map[uint]uint)
+	for _, kword := range keywordMatches {
+		if _, ok := dict[kword.HeadlineID]; !ok {
+			dict[kword.HeadlineID] = 0
+		}
+		dict[kword.HeadlineID]++
+	}
+	for headlineId, matchCount := range dict {
+		if matchCount > 5 {
+			fmt.Printf("%d matches with %d\n", h.ID, headlineId)
+		}
+	}
 }
