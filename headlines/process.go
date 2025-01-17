@@ -114,16 +114,19 @@ func createKeywordStreamRelations(h *bootstrap.Headline) {
 
 	// todo query the correct days
 
-	dict := make(map[uint]uint)
+	matches := make(map[uint][]string, 0)
+
 	for _, kword := range keywordMatches {
-		if _, ok := dict[kword.HeadlineID]; !ok {
-			dict[kword.HeadlineID] = 0
+		if _, ok := matches[kword.HeadlineID]; !ok {
+			matches[kword.HeadlineID] = []string{}
 		}
-		dict[kword.HeadlineID]++
+		matches[kword.HeadlineID] = append(matches[kword.HeadlineID], kword.Keyword)
 	}
-	for headlineId, matchCount := range dict {
-		if matchCount > 5 {
-			fmt.Printf("%d matches with %d\n", h.ID, headlineId)
+	for matchHeadlineID, match := range matches {
+		if len(match) < 5 {
+			continue
 		}
+
+		fmt.Printf("%d matches with %d on %v\n", h.ID, matchHeadlineID, match)
 	}
 }
