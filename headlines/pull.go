@@ -7,7 +7,7 @@ import (
 
 var pullClient = &http.Client{}
 
-func GetHeadlinesFromSource(s *Source) ([]*Headline, error) {
+func GetHeadlinesFromSource(s *Source) ([]*TmpHeadline, error) {
 	req, err := http.NewRequest("GET", s.URL, nil)
 	if err != nil {
 		return nil, err

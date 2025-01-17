@@ -7,7 +7,7 @@ import (
 
 type reutersVideoParser struct{}
 
-func (t reutersVideoParser) ParseBytes(s []byte) ([]*Headline, error) {
+func (t reutersVideoParser) ParseBytes(s []byte) ([]*TmpHeadline, error) {
 	type shape struct {
 		Result struct {
 			Videos []map[string]interface{} `json:"videos"`
@@ -21,10 +21,10 @@ func (t reutersVideoParser) ParseBytes(s []byte) ([]*Headline, error) {
 		return nil, err
 	}
 
-	response := []*Headline{}
+	response := []*TmpHeadline{}
 
 	for _, v := range js.Result.Videos {
-		response = append(response, &Headline{
+		response = append(response, &TmpHeadline{
 			Title:    v["title"].(string),
 			Subtitle: v["description"].(string),
 			// URL:      v["url"].(string),
@@ -37,7 +37,7 @@ func (t reutersVideoParser) ParseBytes(s []byte) ([]*Headline, error) {
 
 type reutersBigStoryParser struct{}
 
-func (t reutersBigStoryParser) ParseBytes(s []byte) ([]*Headline, error) {
+func (t reutersBigStoryParser) ParseBytes(s []byte) ([]*TmpHeadline, error) {
 	type shape struct {
 		Result struct {
 			Articles []map[string]interface{} `json:"articles"`
@@ -51,10 +51,10 @@ func (t reutersBigStoryParser) ParseBytes(s []byte) ([]*Headline, error) {
 		return nil, err
 	}
 
-	response := []*Headline{}
+	response := []*TmpHeadline{}
 
 	for _, v := range js.Result.Articles {
-		response = append(response, &Headline{
+		response = append(response, &TmpHeadline{
 			Title:    v["title"].(string),
 			Subtitle: v["description"].(string),
 			// URL:      v["url"].(string),

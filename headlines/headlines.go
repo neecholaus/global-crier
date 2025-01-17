@@ -10,10 +10,10 @@ type Source struct {
 }
 
 type parser interface {
-	ParseBytes(s []byte) ([]*Headline, error)
+	ParseBytes(s []byte) ([]*TmpHeadline, error)
 }
 
-type Headline struct {
+type TmpHeadline struct {
 	Title    string
 	Subtitle string
 	URL      string
