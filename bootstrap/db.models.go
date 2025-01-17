@@ -21,6 +21,13 @@ type Keyword struct {
 	Keyword    string
 }
 
+type KeywordStream struct {
+	gorm.Model
+	Summary           string
+	Keywords          []string `gorm:"serializer:json"`
+	AuxiliaryKeywords []string `gorm:"serializer:json"`
+}
+
 func init() {
 	Db.AutoMigrate(&Headline{}, &Keyword{})
 }

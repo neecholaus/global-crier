@@ -103,6 +103,10 @@ func storeHeadline(tmpHeadline *TmpHeadline) (*bootstrap.Headline, error) {
 }
 
 func createKeywordStreamRelations(h *bootstrap.Headline) {
+
+	// todo check for matching streams before checking other headlines
+	// which would result in a new stream
+
 	var keywordMatches []*bootstrap.Keyword
 	res := bootstrap.Db.
 		Where("keyword in ?", h.Keywords).
