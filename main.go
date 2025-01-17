@@ -10,7 +10,7 @@ func main() {
 	for _, s := range headlines.Sources {
 		start := time.Now()
 
-		hlines, err := headlines.GetHeadlinesFromSource(*s)
+		hlines, err := headlines.GetHeadlinesFromSource(s)
 		if err != nil {
 			fmt.Printf("ERR (%s - %s) pull failed (%s)\n", s.Publication, s.Name, err)
 			continue

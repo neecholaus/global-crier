@@ -64,7 +64,7 @@ func ExtractKeywordsFromTitle(headline *Headline) {
 	allwords := strings.Split(sanitizedTitle, " ")
 
 	for _, word := range allwords {
-		if len(word) > 1 && !slices.Contains([]string{"the", "what", "a", "an", "and", "that", "in", "on", "around", "will", "be", "his", "her", "this", "must", "may", "as"}, word) {
+		if len(word) > 1 && !slices.Contains([]string{"the", "what", "a", "an", "and", "that", "in", "on", "around", "will", "be", "his", "her", "this", "must", "may", "as", "at", "of", "to", "not", "by"}, word) {
 			keywords = append(keywords, word)
 		}
 	}
