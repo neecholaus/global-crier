@@ -9,6 +9,33 @@ import (
 	"time"
 )
 
+func ReprocessExistingHeadlines() {
+	bootstrap.Db.Where("1=1").Unscoped().Delete(&bootstrap.HeadlineRelation{})
+	bootstrap.Db.Where("1=1").Unscoped().Delete(&bootstrap.Keyword{})
+
+	headlines := []*bootstrap.Headline{}
+	res := bootstrap.Db.Order("ID asc").Find(&headlines)
+	if res.Error != nil {
+		fmt.Println(res.Error)
+		return
+	}
+
+	for _, h := range headlines {
+		h.Keywords = []string{}
+
+		kw := getKeywordsFromString(h.Title)
+		h.Keywords = kw
+
+		err := storeKeywords(h)
+		if err != nil {
+			fmt.Printf("Error storing keywords: %s\n", err)
+			return
+		}
+
+		createKeywordStreamRelations(h)
+	}
+}
+
 func ProcessHeadlines(tmpHeadlines []*TmpHeadline) {
 	start := time.Now()
 
@@ -18,7 +45,8 @@ func ProcessHeadlines(tmpHeadlines []*TmpHeadline) {
 	newHeadlines := []*bootstrap.Headline{}
 
 	for _, th := range tmpHeadlines {
-		extractKeywordsFromTitle(th)
+		kw := getKeywordsFromString(th.Title)
+		th.Keywords = kw
 
 		// check if headline is already in system
 		//
@@ -50,11 +78,11 @@ func ProcessHeadlines(tmpHeadlines []*TmpHeadline) {
 	fmt.Printf("(%d) new, (%d) existing, (%d) total, (%.1f) seconds\n", successCount, existingCount, len(tmpHeadlines), duration.Seconds())
 }
 
-func extractKeywordsFromTitle(headline *TmpHeadline) {
+func getKeywordsFromString(text string) []string {
 	keywords := []string{}
 
 	exp := regexp.MustCompile(`[^a-zA-Z0-9\s\-]+`)
-	sanitized := exp.ReplaceAll([]byte(headline.Title), []byte{})
+	sanitized := exp.ReplaceAll([]byte(text), []byte{})
 
 	sanitizedTitle := strings.ToLower(string(sanitized))
 	sanitizedTitle = strings.ReplaceAll(sanitizedTitle, "'", "")
@@ -68,7 +96,7 @@ func extractKeywordsFromTitle(headline *TmpHeadline) {
 		}
 	}
 
-	headline.Keywords = keywords
+	return keywords
 }
 
 func storeHeadline(tmpHeadline *TmpHeadline) (*bootstrap.Headline, error) {
@@ -89,24 +117,30 @@ func storeHeadline(tmpHeadline *TmpHeadline) (*bootstrap.Headline, error) {
 
 	// todo log
 
-	// create keyword records
-	//
+	err := storeKeywords(prepared)
+	if err != nil {
+		return nil, err
+	}
+
+	return prepared, nil
+}
+
+func storeKeywords(h *bootstrap.Headline) error {
 	var keywords []*bootstrap.Keyword
-	for _, kw := range tmpHeadline.Keywords {
+	for _, kw := range h.Keywords {
 		keywords = append(keywords, &bootstrap.Keyword{
-			HeadlineID: prepared.ID,
+			HeadlineID: h.ID,
 			Keyword:    kw,
 		})
 	}
-	res = bootstrap.Db.Create(&keywords)
+
+	res := bootstrap.Db.Create(&keywords)
 	if res.Error != nil {
 		fmt.Printf("ERR failed storing keywords")
-		return nil, res.Error
+		return res.Error
 	}
 
-	// todo log
-
-	return prepared, nil
+	return nil
 }
 
 func createKeywordStreamRelations(h *bootstrap.Headline) {
