@@ -32,5 +32,9 @@ func GetHeadlinesFromSource(s *Source) ([]*TmpHeadline, error) {
 		return nil, err
 	}
 
+	for _, h := range headlines {
+		h.Source = s
+	}
+
 	return headlines, nil
 }

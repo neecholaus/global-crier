@@ -19,4 +19,5 @@ type TmpHeadline struct {
 	URL      string
 	PulledAt time.Time
 	Keywords []string
+	Source   *Source
 }

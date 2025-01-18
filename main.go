@@ -1,25 +1,25 @@
 package main
 
 import (
+	"fmt"
 	"nick/global-crier/headlines"
+	"time"
 )
 
 func main() {
 
-	headlines.ReprocessExistingHeadlines()
+	for _, s := range headlines.Sources {
+		start := time.Now()
 
-	// for _, s := range headlines.Sources {
-	// 	start := time.Now()
+		tmpHeadlines, err := headlines.GetHeadlinesFromSource(s)
+		if err != nil {
+			fmt.Printf("ERR (%s - %s) pull failed (%s)\n", s.Publication, s.Name, err)
+			continue
+		}
 
-	// 	hlines, err := headlines.GetHeadlinesFromSource(s)
-	// 	if err != nil {
-	// 		fmt.Printf("ERR (%s - %s) pull failed (%s)\n", s.Publication, s.Name, err)
-	// 		continue
-	// 	}
+		duration := time.Since(start)
+		fmt.Printf("(%s - %s) pull took (%.1f) seconds to pull (%d) headlines\n", s.Publication, s.Name, duration.Seconds(), len(tmpHeadlines))
 
-	// 	duration := time.Since(start)
-	// 	fmt.Printf("(%s - %s) pull took (%.1f) seconds to pull (%d) headlines\n", s.Publication, s.Name, duration.Seconds(), len(hlines))
-
-	// 	headlines.ProcessHeadlines(hlines)
-	// }
+		headlines.ProcessNewHeadlines(tmpHeadlines)
+	}
 }

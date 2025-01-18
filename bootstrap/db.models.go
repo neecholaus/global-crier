@@ -11,14 +11,16 @@ type Headline struct {
 	Title       string
 	Description string
 	URL         string
+	Publication string
 	PulledAt    time.Time
 	Keywords    []string `gorm:"serializer:json"`
 }
 
 type Keyword struct {
 	gorm.Model
-	HeadlineID uint
-	Keyword    string
+	HeadlineID       uint
+	Keyword          string
+	HeadlinePulledAt time.Time
 }
 
 // Idea being that new headlines are related to headlines that have

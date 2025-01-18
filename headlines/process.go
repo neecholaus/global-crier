@@ -32,11 +32,11 @@ func ReprocessExistingHeadlines() {
 			return
 		}
 
-		createKeywordStreamRelations(h)
+		identifyAndStoreHeadlineRelations(h)
 	}
 }
 
-func ProcessHeadlines(tmpHeadlines []*TmpHeadline) {
+func ProcessNewHeadlines(tmpHeadlines []*TmpHeadline) {
 	start := time.Now()
 
 	existingCount := 0
@@ -71,7 +71,7 @@ func ProcessHeadlines(tmpHeadlines []*TmpHeadline) {
 	}
 
 	for _, h := range newHeadlines {
-		createKeywordStreamRelations(h)
+		identifyAndStoreHeadlineRelations(h)
 	}
 
 	duration := time.Since(start)
@@ -106,6 +106,7 @@ func storeHeadline(tmpHeadline *TmpHeadline) (*bootstrap.Headline, error) {
 		Title:       tmpHeadline.Title,
 		Description: tmpHeadline.Subtitle,
 		URL:         tmpHeadline.URL,
+		Publication: tmpHeadline.Source.Publication,
 		PulledAt:    tmpHeadline.PulledAt,
 		Keywords:    tmpHeadline.Keywords,
 	}
@@ -115,7 +116,7 @@ func storeHeadline(tmpHeadline *TmpHeadline) (*bootstrap.Headline, error) {
 		return nil, res.Error
 	}
 
-	// todo log
+	fmt.Printf("TRACE created headline #%d\n", prepared.ID)
 
 	err := storeKeywords(prepared)
 	if err != nil {
@@ -129,8 +130,9 @@ func storeKeywords(h *bootstrap.Headline) error {
 	var keywords []*bootstrap.Keyword
 	for _, kw := range h.Keywords {
 		keywords = append(keywords, &bootstrap.Keyword{
-			HeadlineID: h.ID,
-			Keyword:    kw,
+			HeadlineID:       h.ID,
+			HeadlinePulledAt: h.PulledAt,
+			Keyword:          kw,
 		})
 	}
 
@@ -140,20 +142,22 @@ func storeKeywords(h *bootstrap.Headline) error {
 		return res.Error
 	}
 
+	fmt.Printf("TRACE created keywords for headline %d\n", h.ID)
+
 	return nil
 }
 
-func createKeywordStreamRelations(h *bootstrap.Headline) {
+func identifyAndStoreHeadlineRelations(h *bootstrap.Headline) {
 	var keywordMatches []*bootstrap.Keyword
 	res := bootstrap.Db.
 		Where("keyword in ?", h.Keywords).
 		Where("headline_id != ?", h.ID).
+		Where("headline_pulled_at >= ?", h.PulledAt.AddDate(0, -3, 0)). // compared against headlines from the recent past
+		Where("headline_pulled_at <= ?", h.PulledAt).
 		Find(&keywordMatches)
 	if res.Error != nil {
 		fmt.Printf("failed pulling keywords (%s)\n", res.Error)
 	}
-
-	// todo query the correct days
 
 	matches := make(map[uint][]string, 0)
 
@@ -173,8 +177,6 @@ func createKeywordStreamRelations(h *bootstrap.Headline) {
 			continue
 		}
 
-		// todo log
-
 		prepared := bootstrap.HeadlineRelation{
 			ExistingHeadlineID: matchedHeadlineID,
 			NewHeadlineID:      h.ID,
@@ -186,5 +188,7 @@ func createKeywordStreamRelations(h *bootstrap.Headline) {
 			fmt.Printf("ERR failed storing headline match for #%d and #%d\n - %s", h.ID, matchedHeadlineID, res.Error)
 			continue
 		}
+
+		fmt.Printf("TRACE created relation for headlines #%d and #%d\n", h.ID, matchedHeadlineID)
 	}
 }
