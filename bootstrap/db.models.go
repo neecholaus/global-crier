@@ -21,13 +21,16 @@ type Keyword struct {
 	Keyword    string
 }
 
-type KeywordStream struct {
+// Idea being that new headlines are related to headlines that have
+// already been pulled. By specifying which was first we can more
+// easily step through time to see the "stream".
+type HeadlineRelation struct {
 	gorm.Model
-	Summary           string
-	Keywords          []string `gorm:"serializer:json"`
-	AuxiliaryKeywords []string `gorm:"serializer:json"`
+	ExistingHeadlineID uint
+	NewHeadlineID      uint
+	KeywordMatches     []string `gorm:"serializer:json"`
 }
 
 func init() {
-	Db.AutoMigrate(&Headline{}, &Keyword{})
+	Db.AutoMigrate(&Headline{}, &Keyword{}, &HeadlineRelation{})
 }

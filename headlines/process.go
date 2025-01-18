@@ -15,12 +15,13 @@ func ProcessHeadlines(tmpHeadlines []*TmpHeadline) {
 	existingCount := 0
 	successCount := 0
 
-	headlines := []*bootstrap.Headline{}
+	newHeadlines := []*bootstrap.Headline{}
 
 	for _, th := range tmpHeadlines {
 		extractKeywordsFromTitle(th)
 
-		// existence check
+		// check if headline is already in system
+		//
 		res := bootstrap.Db.
 			Where("title = ?", th.Title).
 			Find(&bootstrap.Headline{})
@@ -37,11 +38,11 @@ func ProcessHeadlines(tmpHeadlines []*TmpHeadline) {
 			continue
 		}
 
-		headlines = append(headlines, headline)
+		newHeadlines = append(newHeadlines, headline)
 		successCount++
 	}
 
-	for _, h := range headlines {
+	for _, h := range newHeadlines {
 		createKeywordStreamRelations(h)
 	}
 
@@ -72,6 +73,7 @@ func extractKeywordsFromTitle(headline *TmpHeadline) {
 
 func storeHeadline(tmpHeadline *TmpHeadline) (*bootstrap.Headline, error) {
 	// create headline record
+	//
 	prepared := &bootstrap.Headline{
 		Title:       tmpHeadline.Title,
 		Description: tmpHeadline.Subtitle,
@@ -85,7 +87,10 @@ func storeHeadline(tmpHeadline *TmpHeadline) (*bootstrap.Headline, error) {
 		return nil, res.Error
 	}
 
+	// todo log
+
 	// create keyword records
+	//
 	var keywords []*bootstrap.Keyword
 	for _, kw := range tmpHeadline.Keywords {
 		keywords = append(keywords, &bootstrap.Keyword{
@@ -99,14 +104,12 @@ func storeHeadline(tmpHeadline *TmpHeadline) (*bootstrap.Headline, error) {
 		return nil, res.Error
 	}
 
+	// todo log
+
 	return prepared, nil
 }
 
 func createKeywordStreamRelations(h *bootstrap.Headline) {
-
-	// todo check for matching streams before checking other headlines
-	// which would result in a new stream
-
 	var keywordMatches []*bootstrap.Keyword
 	res := bootstrap.Db.
 		Where("keyword in ?", h.Keywords).
@@ -120,17 +123,34 @@ func createKeywordStreamRelations(h *bootstrap.Headline) {
 
 	matches := make(map[uint][]string, 0)
 
+	// assemble map of shared keywords by headline id
+	//
 	for _, kword := range keywordMatches {
 		if _, ok := matches[kword.HeadlineID]; !ok {
 			matches[kword.HeadlineID] = []string{}
 		}
 		matches[kword.HeadlineID] = append(matches[kword.HeadlineID], kword.Keyword)
 	}
-	for matchHeadlineID, match := range matches {
-		if len(match) < 5 {
+
+	// create headline relation record for each strong match
+	//
+	for matchedHeadlineID, matchedKeywords := range matches {
+		if len(matchedKeywords) < 4 {
 			continue
 		}
 
-		fmt.Printf("%d matches with %d on %v\n", h.ID, matchHeadlineID, match)
+		// todo log
+
+		prepared := bootstrap.HeadlineRelation{
+			ExistingHeadlineID: matchedHeadlineID,
+			NewHeadlineID:      h.ID,
+			KeywordMatches:     matchedKeywords,
+		}
+
+		res := bootstrap.Db.Create(&prepared)
+		if res.Error != nil {
+			fmt.Printf("ERR failed storing headline match for #%d and #%d\n - %s", h.ID, matchedHeadlineID, res.Error)
+			continue
+		}
 	}
 }
