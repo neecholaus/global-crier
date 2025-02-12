@@ -11,7 +11,12 @@ var Db *gorm.DB
 
 func init() {
 	var err error
-	Db, err = gorm.Open(sqlite.Open("crier.db"), &gorm.Config{
+
+	if Config.DBPath == "" {
+		panic("no db path")
+	}
+
+	Db, err = gorm.Open(sqlite.Open(Config.DBPath), &gorm.Config{
 		NowFunc: func() time.Time {
 			return time.Now().UTC()
 		},
